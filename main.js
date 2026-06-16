@@ -127,10 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // PITCH MODE LOGIC
 const pitchSteps = [
-  { target: '#view-dashboard', title: 'The Premium Dashboard', script: 'Welcome to Nava Platform Hub. Unlike AWS or GCP clunky consoles, we built a premium, AI-native command center. Notice the real-time telemetry rendering via hardware-accelerated canvas. It’s built for modern engineering teams.', position: 'bottom' },
-  { target: '#ai-toggle', title: 'Nava AI Assistant', script: 'Click this to open the AI Assistant. Instead of writing complex Terraform scripts manually, you simply ask the AI to provision an LLM training cluster, and it generates the exact infrastructure as code tailored to Nava’s 9AC and 9AK services.', position: 'left' },
-  { target: '#pricing-sidebar', title: 'Dynamic Pricing Engine', script: 'Transparency is our core. As you add or remove GPU clusters, this sidebar calculates your costs in real-time. It even compares our H100 pricing directly against CoreWeave and AWS, proving our cost efficiency.', position: 'right' },
-  { target: '#nav-simulator', title: 'Workload Flight Simulator', script: 'This is our killer feature. Before spending a single dollar, click here to simulate your AI workload. We mathematically predict VRAM constraints, network bottlenecks, and exactly how long your Llama 3 fine-tuning will take, allowing you to optimize before deploying.', position: 'bottom' }
+  { target: '#view-dashboard', title: 'The Premium Dashboard', script: "Welcome to Nava Platform Hub. Unlike AWS or GCP clunky consoles, we built a premium, AI-native command center. Notice the real-time telemetry rendering via hardware-accelerated canvas. It is built for modern engineering teams.", position: 'bottom' },
+  { target: '#ai-toggle', title: 'Nava AI Assistant', script: "Click this to open the AI Assistant. Instead of writing complex Terraform scripts manually, you simply ask the AI to provision an LLM training cluster, and it generates the exact infrastructure as code tailored to Nava 9AC and 9AK services.", position: 'left' },
+  { target: '#pricing-sidebar', title: 'Dynamic Pricing Engine', script: "Transparency is our core. As you add or remove GPU clusters, this sidebar calculates your costs in real-time. It even compares our H100 pricing directly against CoreWeave and AWS, proving our cost efficiency.", position: 'right' },
+  { target: '#nav-simulator', title: 'Workload Flight Simulator', script: "This is our killer feature. Before spending a single dollar, click here to simulate your AI workload. We mathematically predict VRAM constraints, network bottlenecks, and exactly how long your Llama 3 fine-tuning will take, allowing you to optimize before deploying.", position: 'bottom' }
 ];
 
 let currentPitchStep = 0;
