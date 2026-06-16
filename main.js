@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSimulator();
   
   // Tabs
-  const tabs = document.querySelectorAll('.nav-tab[data-target]');
+  const tabs = document.querySelectorAll('.nav-tab[data-view]');
   const views = document.querySelectorAll('.view');
   
   tabs.forEach(tab => {
@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Activate target
       tab.classList.add('active');
-      const targetId = tab.getAttribute('data-target');
+      const viewName = tab.getAttribute('data-view');
+      const targetId = 'view-' + viewName;
       document.getElementById(targetId).classList.add('active');
       
       if (targetId === 'view-topology') {
@@ -120,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Simulator shortcut listener
   window.addEventListener('nava:openSimulator', () => {
-    const simTab = document.querySelector('.nav-tab[data-target="view-simulator"]');
+    const simTab = document.querySelector('.nav-tab[data-view="simulator"]');
     if (simTab) simTab.click();
   });
 });
@@ -176,9 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Ensure the view is active if targeting a tab/view
     if (step.target === '#view-dashboard') {
-       document.querySelector('.nav-tab[data-target="view-dashboard"]')?.click();
+       document.querySelector('.nav-tab[data-view="dashboard"]')?.click();
     } else if (step.target === '#nav-simulator') {
-       document.querySelector('.nav-tab[data-target="view-simulator"]')?.click();
+       document.querySelector('.nav-tab[data-view="simulator"]')?.click();
     }
     
     // wait for layout

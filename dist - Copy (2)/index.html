@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nava Platform Hub — AI-Native Cloud Console</title>
+  <meta name="description" content="Next-generation AI-native cloud infrastructure management console for Nava. Monitor GPU fleets, simulate workloads, manage Kubernetes clusters, and optimize costs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <script type="module" crossorigin src="./assets/index-B9qxyAN-.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Ci9ROCHE.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Navigation Bar -->
+    <header id="top-nav">
+      <div class="nav-left">
+        <div id="logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+            <path d="M8 22V10l8 12 8-12v12" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#00E5C8"/><stop offset="1" stop-color="#7C5CFC"/></linearGradient></defs>
+          </svg>
+          <span class="logo-text">NAVA</span>
+          <span class="logo-badge">PLATFORM HUB</span>
+        </div>
+      </div>
+      <nav class="nav-center">
+        <button class="nav-tab active" data-view="dashboard" id="nav-dashboard">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-tab" data-view="simulator" id="nav-simulator">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 12V6m4 6V4m4 8V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Simulator
+        </button>
+        <button class="nav-tab" data-view="topology" id="nav-topology">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5" stroke="currentColor" stroke-width="1.2"/></svg>
+          Topology
+        </button>
+      </nav>
+      <div class="nav-right">
+        <div class="status-indicator">
+          <span class="status-dot pulse"></span>
+          <span class="status-text">All Systems Operational</span>
+        </div>
+        <button id="pitch-mode-btn" class="nav-tab" style="color: var(--warning); border: 1px solid var(--warning-bg); background: rgba(255, 170, 0, 0.05); margin-right: 8px;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 4v4l-6 4-6-4V6l6-4z" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+          Pitch Mode
+        </button>
+        <button id="ai-toggle" class="ai-toggle-btn" title="Open AI Assistant">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8 8 8 0 018-8z" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="9" r="1" fill="currentColor"/><circle cx="13" cy="9" r="1" fill="currentColor"/><path d="M7 12.5c.8 1 1.8 1.5 3 1.5s2.2-.5 3-1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span>Nava AI</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div id="main-layout">
+      <!-- Sidebar: Pricing Engine -->
+      <aside id="pricing-sidebar">
+        <div class="sidebar-header">
+          <h2>Cost Center</h2>
+          <div class="cost-total">
+            <span class="cost-label">Estimated Monthly</span>
+            <span class="cost-value" id="total-cost">$0.00</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section" id="resource-breakdown">
+          <h3>Resource Breakdown</h3>
+          <div id="cost-items" class="cost-items">
+            <div class="cost-empty">No resources provisioned</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3>Price / Performance</h3>
+          <div id="perf-scores" class="perf-scores"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3>Scenario Compare</h3>
+          <div class="scenario-toggle">
+            <button class="scenario-btn active" data-scenario="current">Current</button>
+            <button class="scenario-btn" data-scenario="optimized">Optimized</button>
+          </div>
+          <div id="scenario-comparison" class="scenario-comparison"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <h3>Competitor Pricing</h3>
+          <div id="competitor-prices" class="competitor-prices"></div>
+        </div>
+
+        <button id="export-pdf" class="export-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 14h8a1 1 0 001-1V5l-4-4H4a1 1 0 00-1 1v11a1 1 0 001 1z" stroke="currentColor" stroke-width="1.3"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.3"/></svg>
+          Export Estimate (PDF)
+        </button>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main id="main-content">
+        <!-- Dashboard View -->
+        <section id="view-dashboard" class="view active">
+          <!-- Top Stats Row -->
+          <div class="stats-row" id="stats-row"></div>
+
+          <!-- GPU Fleet -->
+          <div class="section-header">
+            <h2>GPU Fleet Overview</h2>
+            <button class="provision-btn" id="provision-btn">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              New Cluster
+            </button>
+          </div>
+          <div id="gpu-fleet" class="gpu-fleet"></div>
+
+          <!-- Charts Row -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Compute Utilization</h3>
+                <span class="chart-badge">Live</span>
+              </div>
+              <canvas id="chart-compute" width="500" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3>Network I/O</h3>
+              <canvas id="chart-network" width="500" height="200"></canvas>
+            </div>
+          </div>
+
+          <!-- K8s + Deployments -->
+          <div class="bottom-row">
+            <div class="panel-card">
+              <h3>Kubernetes Clusters (9AK)</h3>
+              <div id="k8s-clusters" class="k8s-clusters"></div>
+            </div>
+            <div class="panel-card">
+              <h3>Recent Activity</h3>
+              <div id="activity-feed" class="activity-feed"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator View -->
+        <section id="view-simulator" class="view">
+          <div class="simulator-container">
+            <div class="sim-header">
+              <h2>🧪 AI Workload Flight Simulator</h2>
+              <p class="sim-subtitle">Simulate your AI workload before spending a single dollar</p>
+            </div>
+
+            <!-- Config Panel -->
+            <div class="sim-config" id="sim-config">
+              <div class="config-group">
+                <label>Workload Type</label>
+                <select id="sim-workload-type">
+                  <option value="llm-finetune">LLM Fine-tuning</option>
+                  <option value="llm-pretrain">LLM Pre-training</option>
+                  <option value="diffusion-train">Diffusion Model Training</option>
+                  <option value="inference">Inference Endpoint</option>
+                  <option value="rl-training">Reinforcement Learning</option>
+                </select>
+              </div>
+              <div class="config-group">
+                <label>GPU Type</label>
+                <select id="sim-gpu-type">
+                  <option value="h100">NVIDIA H100 SXM — $3.50/hr</option>
+                  <option value="a100">NVIDIA A100 80GB — $2.10/hr</option>
+                  <option value="b200">NVIDIA B200 SXM — $5.20/hr</option>
+                  <option value="l40s">NVIDIA L40S — $1.40/hr</option>
+                </select>
+              </div>
+              <div class="config-group">
+                <label>GPU Count</label>
+                <input type="range" id="sim-gpu-count" min="1" max="64" value="4" />
+                <span class="range-value" id="sim-gpu-count-val">4</span>
+              </div>
+              <div class="config-group">
+                <label>Dataset Size (GB)</label>
+                <input type="range" id="sim-dataset-size" min="10" max="5000" value="500" step="10" />
+                <span class="range-value" id="sim-dataset-val">500 GB</span>
+              </div>
+              <div class="config-group">
+                <label>Storage (9PB)</label>
+                <select id="sim-storage">
+                  <option value="500">500 GB — $0.10/GB/mo</option>
+                  <option value="1000">1 TB — $0.10/GB/mo</option>
+                  <option value="2000" selected>2 TB — $0.08/GB/mo</option>
+                  <option value="5000">5 TB — $0.06/GB/mo</option>
+                </select>
+              </div>
+              <button class="sim-run-btn" id="sim-run-btn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2l10 6-10 6V2z" fill="currentColor"/></svg>
+                Run Simulation
+              </button>
+            </div>
+
+            <!-- Simulation Display -->
+            <div class="sim-display hidden" id="sim-display">
+              <div class="sim-progress-bar">
+                <div class="sim-progress-fill" id="sim-progress-fill"></div>
+                <span class="sim-progress-text" id="sim-progress-text">Initializing...</span>
+              </div>
+
+              <div class="sim-metrics-grid">
+                <div class="sim-metric-card">
+                  <h4>GPU Utilization</h4>
+                  <canvas id="sim-gpu-chart" width="400" height="150"></canvas>
+                  <div class="sim-metric-value" id="sim-gpu-util">0%</div>
+                </div>
+                <div class="sim-metric-card">
+                  <h4>VRAM Pressure</h4>
+                  <div class="gauge-container">
+                    <canvas id="sim-vram-gauge" width="180" height="180"></canvas>
+                    <div class="gauge-label" id="sim-vram-label">0 / 80 GB</div>
+                  </div>
+                </div>
+                <div class="sim-metric-card">
+                  <h4>Network Fabric</h4>
+                  <canvas id="sim-network-chart" width="400" height="150"></canvas>
+                  <div class="sim-metric-value" id="sim-net-throughput">0 Gbps</div>
+                </div>
+                <div class="sim-metric-card sim-cost-card">
+                  <h4>Cost Accumulator</h4>
+                  <div class="sim-cost-ticker" id="sim-cost-ticker">$0.00</div>
+                  <div class="sim-cost-meta">
+                    <span id="sim-est-total">Est. Total: --</span>
+                    <span id="sim-est-time">Est. Time: --</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottleneck Detection -->
+              <div class="sim-alerts" id="sim-alerts"></div>
+
+              <!-- Recommendations -->
+              <div class="sim-recommendations hidden" id="sim-recommendations">
+                <h3>🔍 Optimization Recommendations</h3>
+                <div id="sim-rec-list"></div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="sim-actions">
+                <button class="sim-action-btn secondary" id="sim-tweak-btn">⚙️ Adjust & Re-run</button>
+                <button class="sim-action-btn primary" id="sim-deploy-btn">🚀 Deploy This Configuration</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Topology View -->
+        <section id="view-topology" class="view">
+          <div class="topology-container">
+            <div class="section-header">
+              <h2>Network Topology — Airgap VPC (9AV)</h2>
+            </div>
+            <div class="topology-canvas-wrap">
+              <canvas id="topology-canvas" width="900" height="500"></canvas>
+            </div>
+            <div class="topology-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#00E5C8"></span> Compute (9AC)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#7C5CFC"></span> Kubernetes (9AK)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#FF6B6B"></span> Firewall (9EF)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#FFD93D"></span> Edge (9ED)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#4ECDC4"></span> Storage (9PB/9AO)</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#FF8A5C"></span> Database (9RD)</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- AI Assistant Overlay -->
+    <div id="ai-assistant" class="ai-panel">
+      <div class="ai-header">
+        <div class="ai-header-left">
+          <div class="ai-avatar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="url(#ai-grad)" stroke-width="2"/><circle cx="9" cy="11" r="1.5" fill="#00E5C8"/><circle cx="15" cy="11" r="1.5" fill="#7C5CFC"/><path d="M9 15c.8 1 1.8 1.5 3 1.5s2.2-.5 3-1.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><defs><linearGradient id="ai-grad" x1="2" y1="2" x2="22" y2="22"><stop stop-color="#00E5C8"/><stop offset="1" stop-color="#7C5CFC"/></linearGradient></defs></svg>
+          </div>
+          <span class="ai-title">Nava AI Assistant</span>
+          <span class="ai-status">Online</span>
+        </div>
+        <button id="ai-close" class="ai-close-btn">&times;</button>
+      </div>
+
+      <div class="ai-messages" id="ai-messages">
+        <div class="ai-message bot">
+          <div class="msg-content">
+            <p>👋 Hi! I'm Nava AI. I can help you:</p>
+            <ul>
+              <li>Deploy infrastructure with natural language</li>
+              <li>Choose the right GPU for your workload</li>
+              <li>Generate Terraform/YAML configs</li>
+              <li>Simulate workloads before deployment</li>
+            </ul>
+            <p>Try one of the quick actions below, or type your request!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-chips" id="ai-chips">
+        <button class="ai-chip" data-prompt="Deploy an LLM training environment with 4x H100 GPUs and 2TB storage">🚀 Deploy LLM Training Env</button>
+        <button class="ai-chip" data-prompt="What's the best GPU for fine-tuning Llama 3?">🎯 Best GPU for Llama 3?</button>
+        <button class="ai-chip" data-prompt="Simulate inference endpoint with 2x A100 GPUs">🧪 Simulate Inference</button>
+        <button class="ai-chip" data-prompt="Show me cost comparison between H100 and A100 for training">💰 H100 vs A100 Cost</button>
+        <button class="ai-chip" data-prompt="Scale my Kubernetes cluster to 8 nodes">⚡ Scale K8s Cluster</button>
+      </div>
+
+      <div class="ai-input-area">
+        <input type="text" id="ai-input" placeholder="Describe what you want to deploy..." autocomplete="off" />
+        <button id="ai-send" class="ai-send-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9l14-7-4 16-3-6-7-3z" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Provision Modal -->
+    <div id="provision-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <h2>Provision New Cluster</h2>
+        <div class="modal-form">
+          <div class="config-group">
+            <label>Cluster Name</label>
+            <input type="text" id="prov-name" value="gpu-cluster-01" />
+          </div>
+          <div class="config-group">
+            <label>Type</label>
+            <select id="prov-type">
+              <option value="9ac">9AC — Adaptive Compute</option>
+              <option value="9ak">9AK — Autonomous Kubernetes</option>
+            </select>
+          </div>
+          <div class="config-group">
+            <label>GPU</label>
+            <select id="prov-gpu">
+              <option value="h100">H100 SXM 80GB</option>
+              <option value="a100">A100 80GB</option>
+              <option value="b200">B200 SXM 192GB</option>
+            </select>
+          </div>
+          <div class="config-group">
+            <label>Nodes</label>
+            <input type="range" id="prov-nodes" min="1" max="16" value="4" />
+            <span class="range-value" id="prov-nodes-val">4</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn secondary" id="prov-cancel">Cancel</button>
+          <button class="modal-btn primary" id="prov-deploy">🚀 Deploy Cluster</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pitch Mode Overlay -->
+    <div id="pitch-overlay" class="hidden">
+      <div id="pitch-highlight" class="pitch-highlight"></div>
+      <div id="pitch-tooltip" class="pitch-tooltip">
+        <div class="pitch-header">
+          <span class="pitch-step-counter">Step <span id="pitch-step-num">1</span>/4</span>
+          <h3 id="pitch-title">Title</h3>
+        </div>
+        <div class="pitch-body" id="pitch-body">
+          Script goes here
+        </div>
+        <div class="pitch-footer">
+          <button id="pitch-prev" class="pitch-btn secondary">Back</button>
+          <button id="pitch-next" class="pitch-btn primary">Next</button>
+          <button id="pitch-close" class="pitch-close-btn">&times;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
