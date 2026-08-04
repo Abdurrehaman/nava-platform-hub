@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nava Platform Hub — AI-Native Cloud Console</title>
-  <meta name="description" content="Next-generation AI-native cloud infrastructure management console for Nava. Monitor GPU fleets, simulate workloads, manage Kubernetes clusters, and optimize costs." />
+  <title>Nava Platform Hub — Autonomous AI-Native Cloud Console</title>
+  <meta name="description" content="Hyperscale AI-native cloud console for Nava. Monitor GPU fleets, vLLM/SGLang inference engines, DCGM hardware metrics, RoCEv2/InfiniBand fabrics, and simulate AI workloads." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
-  <script type="module" crossorigin src="./assets/index-Bi07VmjR.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-Ci9ROCHE.css">
+  <script type="module" crossorigin src="./assets/index-CW02BliA.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BCh1Gxx6.css">
 </head>
 <body>
   <div id="app">
@@ -32,20 +32,27 @@
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
           Dashboard
         </button>
+        <button class="nav-tab" data-view="inference" id="nav-inference">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Inference Stack
+        </button>
+        <button class="nav-tab" data-view="sre" id="nav-sre">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          GPU SRE & Fleet Ops
+        </button>
+        <button class="nav-tab" data-view="network" id="nav-network">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5" stroke="currentColor" stroke-width="1.2"/></svg>
+          Network Fabric
+        </button>
         <button class="nav-tab" data-view="simulator" id="nav-simulator">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 12V6m4 6V4m4 8V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          Simulator
-        </button>
-        <button class="nav-tab" data-view="topology" id="nav-topology">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 5.5L7 10.5M10.5 5.5L9 10.5" stroke="currentColor" stroke-width="1.2"/></svg>
-          Topology
+          Simulator & Benchmarks
         </button>
       </nav>
       <div class="nav-right">
-        <div class="status-indicator">
-          <span class="status-dot pulse"></span>
-          <span class="status-text">All Systems Operational</span>
-        </div>
+        <button id="cheatsheet-btn" class="nav-tab" style="color: #00E5C8; border: 1px solid rgba(0, 229, 200, 0.3); background: rgba(0, 229, 200, 0.08); margin-right: 8px;">
+          📜 Resume & Interview Guide
+        </button>
         <button id="pitch-mode-btn" class="nav-tab" style="color: var(--warning); border: 1px solid var(--warning-bg); background: rgba(255, 170, 0, 0.05); margin-right: 8px;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l6 4v4l-6 4-6-4V6l6-4z" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
           Pitch Mode
@@ -56,6 +63,9 @@
         </button>
       </div>
     </header>
+
+    <!-- Notification Toast -->
+    <div id="sre-toast-notification" class="sre-toast hidden"></div>
 
     <!-- Main Layout -->
     <div id="main-layout">
@@ -105,10 +115,7 @@
       <main id="main-content">
         <!-- Dashboard View -->
         <section id="view-dashboard" class="view active">
-          <!-- Top Stats Row -->
           <div class="stats-row" id="stats-row"></div>
-
-          <!-- GPU Fleet -->
           <div class="section-header">
             <h2>GPU Fleet Overview</h2>
             <button class="provision-btn" id="provision-btn">
@@ -117,8 +124,6 @@
             </button>
           </div>
           <div id="gpu-fleet" class="gpu-fleet"></div>
-
-          <!-- Charts Row -->
           <div class="charts-row">
             <div class="chart-card">
               <div class="chart-header">
@@ -132,8 +137,6 @@
               <canvas id="chart-network" width="500" height="200"></canvas>
             </div>
           </div>
-
-          <!-- K8s + Deployments -->
           <div class="bottom-row">
             <div class="panel-card">
               <h3>Kubernetes Clusters (9AK)</h3>
@@ -146,28 +149,130 @@
           </div>
         </section>
 
-        <!-- Simulator View -->
+        <!-- Inference Stack View -->
+        <section id="view-inference" class="view">
+          <div id="inference-metrics-container">
+            <div class="section-header">
+              <h2>⚡ Inference Stack Telemetry & Engine Performance</h2>
+              <p class="section-subtitle">Real-time metrics for vLLM, SGLang, and TensorRT-LLM serving engines</p>
+            </div>
+            
+            <div class="inference-top-grid">
+              <div id="inference-engines-grid" class="inference-engines-grid"></div>
+              <div class="panel-card kv-card">
+                <h3>KV-Cache Paged Memory Pressure</h3>
+                <canvas id="kv-cache-gauge" width="220" height="220"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card margin-top">
+              <h3>Active Foundation Model Serving Endpoints</h3>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Model Name</th>
+                    <th>Engine</th>
+                    <th>Quantization</th>
+                    <th>GPU Hardware</th>
+                    <th>TTFT (First Token)</th>
+                    <th>ITL (Inter-Token)</th>
+                    <th>Throughput</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="inference-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- GPU SRE & Fleet Ops View -->
+        <section id="view-sre" class="view">
+          <div id="sre-ops-container">
+            <div class="section-header">
+              <h2>🛠️ GPU Site Reliability & Bare-Metal Operations</h2>
+              <p class="section-subtitle">NVIDIA DCGM hardware metrics, kernel Xid errors, and automated self-healing runbooks</p>
+            </div>
+
+            <div class="dcgm-row">
+              <div class="panel-card dcgm-panel">
+                <h3>NVIDIA DCGM Hardware Observability</h3>
+                <div id="dcgm-stats-grid" class="dcgm-stats-grid"></div>
+              </div>
+              <div class="panel-card gauge-panel">
+                <h3>SM Occupancy %</h3>
+                <canvas id="dcgm-occupancy-gauge" width="200" height="200"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card margin-top">
+              <h3>Live Xid & PCIe Error Log Stream (Auto-Remediation Enabled)</h3>
+              <div id="xid-error-feed" class="xid-error-feed"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Network Fabric View -->
+        <section id="view-network" class="view">
+          <div class="topology-container">
+            <div class="section-header">
+              <h2>🌐 GPU Backend Network Fabric (InfiniBand & RoCEv2)</h2>
+              <p class="section-subtitle">Clos / Leaf-Spine topology visualizer & GPUDirect RDMA telemetry</p>
+            </div>
+
+            <div id="network-info-card" class="dcgm-stats-grid margin-bottom"></div>
+
+            <div class="topology-canvas-wrap">
+              <canvas id="fabric-canvas" width="900" height="420"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Simulator & Benchmarks View -->
         <section id="view-simulator" class="view">
           <div class="simulator-container">
             <div class="sim-header">
-              <h2>🧪 AI Workload Flight Simulator</h2>
-              <p class="sim-subtitle">Simulate your AI workload before spending a single dollar</p>
+              <h2>🧪 AI Workload & Quantization Simulator</h2>
+              <p class="sim-subtitle">Simulate vLLM vs TensorRT-LLM, FP8/AWQ quantization, and speculative decoding gains</p>
             </div>
 
-            <!-- Config Panel -->
             <div class="sim-config" id="sim-config">
               <div class="config-group">
                 <label>Workload Type</label>
                 <select id="sim-workload-type">
-                  <option value="llm-finetune">LLM Fine-tuning</option>
+                  <option value="llm-finetune">LLM Fine-tuning (LLaMA 3 70B)</option>
                   <option value="llm-pretrain">LLM Pre-training</option>
-                  <option value="diffusion-train">Diffusion Model Training</option>
-                  <option value="inference">Inference Endpoint</option>
-                  <option value="rl-training">Reinforcement Learning</option>
+                  <option value="inference">Hyperscale Inference Serving</option>
+                  <option value="voice">Whisper Voice Serving</option>
                 </select>
               </div>
               <div class="config-group">
-                <label>GPU Type</label>
+                <label>Serving Engine</label>
+                <select id="sim-engine">
+                  <option value="vllm">vLLM (PagedAttention)</option>
+                  <option value="sglang">SGLang (RadixAttention)</option>
+                  <option value="trt-llm">TensorRT-LLM (CUDA Graphs)</option>
+                </select>
+              </div>
+              <div class="config-group">
+                <label>Quantization</label>
+                <select id="sim-quantization">
+                  <option value="fp16">FP16 Uncompressed</option>
+                  <option value="fp8" selected>FP8 (8-bit Floating Point)</option>
+                  <option value="awq">AWQ 4-bit (Activation-aware)</option>
+                  <option value="gptq">GPTQ 4-bit</option>
+                </select>
+              </div>
+              <div class="config-group">
+                <label>Speculative Decoding</label>
+                <select id="sim-speculative">
+                  <option value="eagle">EAGLE Draft Model (2.4x Speedup)</option>
+                  <option value="medusa">Medusa Multi-Head (2.1x Speedup)</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </div>
+              <div class="config-group">
+                <label>GPU Hardware</label>
                 <select id="sim-gpu-type">
                   <option value="h100">NVIDIA H100 SXM — $3.50/hr</option>
                   <option value="a100">NVIDIA A100 80GB — $2.10/hr</option>
@@ -180,27 +285,12 @@
                 <input type="range" id="sim-gpu-count" min="1" max="64" value="4" />
                 <span class="range-value" id="sim-gpu-count-val">4</span>
               </div>
-              <div class="config-group">
-                <label>Dataset Size (GB)</label>
-                <input type="range" id="sim-dataset-size" min="10" max="5000" value="500" step="10" />
-                <span class="range-value" id="sim-dataset-val">500 GB</span>
-              </div>
-              <div class="config-group">
-                <label>Storage (9PB)</label>
-                <select id="sim-storage">
-                  <option value="500">500 GB — $0.10/GB/mo</option>
-                  <option value="1000">1 TB — $0.10/GB/mo</option>
-                  <option value="2000" selected>2 TB — $0.08/GB/mo</option>
-                  <option value="5000">5 TB — $0.06/GB/mo</option>
-                </select>
-              </div>
               <button class="sim-run-btn" id="sim-run-btn">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2l10 6-10 6V2z" fill="currentColor"/></svg>
-                Run Simulation
+                Run Simulation & Benchmark
               </button>
             </div>
 
-            <!-- Simulation Display -->
             <div class="sim-display hidden" id="sim-display">
               <div class="sim-progress-bar">
                 <div class="sim-progress-fill" id="sim-progress-fill"></div>
@@ -214,14 +304,14 @@
                   <div class="sim-metric-value" id="sim-gpu-util">0%</div>
                 </div>
                 <div class="sim-metric-card">
-                  <h4>VRAM Pressure</h4>
+                  <h4>VRAM Memory Pressure</h4>
                   <div class="gauge-container">
                     <canvas id="sim-vram-gauge" width="180" height="180"></canvas>
                     <div class="gauge-label" id="sim-vram-label">0 / 80 GB</div>
                   </div>
                 </div>
                 <div class="sim-metric-card">
-                  <h4>Network Fabric</h4>
+                  <h4>Network Fabric Throughput</h4>
                   <canvas id="sim-network-chart" width="400" height="150"></canvas>
                   <div class="sim-metric-value" id="sim-net-throughput">0 Gbps</div>
                 </div>
@@ -235,44 +325,53 @@
                 </div>
               </div>
 
-              <!-- Bottleneck Detection -->
               <div class="sim-alerts" id="sim-alerts"></div>
 
-              <!-- Recommendations -->
               <div class="sim-recommendations hidden" id="sim-recommendations">
                 <h3>🔍 Optimization Recommendations</h3>
                 <div id="sim-rec-list"></div>
               </div>
 
-              <!-- Action Buttons -->
               <div class="sim-actions">
-                <button class="sim-action-btn secondary" id="sim-tweak-btn">⚙️ Adjust & Re-run</button>
-                <button class="sim-action-btn primary" id="sim-deploy-btn">🚀 Deploy This Configuration</button>
+                <button class="sim-action-btn secondary" id="sim-tweak-btn">⚙️ Adjust Parameters</button>
+                <button class="sim-action-btn primary" id="sim-deploy-btn">🚀 Deploy Configuration</button>
               </div>
             </div>
           </div>
         </section>
-
-        <!-- Topology View -->
-        <section id="view-topology" class="view">
-          <div class="topology-container">
-            <div class="section-header">
-              <h2>Network Topology — Airgap VPC (9AV)</h2>
-            </div>
-            <div class="topology-canvas-wrap">
-              <canvas id="topology-canvas" width="900" height="500"></canvas>
-            </div>
-            <div class="topology-legend">
-              <span class="legend-item"><span class="legend-dot" style="background:#00E5C8"></span> Compute (9AC)</span>
-              <span class="legend-item"><span class="legend-dot" style="background:#7C5CFC"></span> Kubernetes (9AK)</span>
-              <span class="legend-item"><span class="legend-dot" style="background:#FF6B6B"></span> Firewall (9EF)</span>
-              <span class="legend-item"><span class="legend-dot" style="background:#FFD93D"></span> Edge (9ED)</span>
-              <span class="legend-item"><span class="legend-dot" style="background:#4ECDC4"></span> Storage (9PB/9AO)</span>
-              <span class="legend-item"><span class="legend-dot" style="background:#FF8A5C"></span> Database (9RD)</span>
-            </div>
-          </div>
-        </section>
       </main>
+    </div>
+
+    <!-- Resume & Interview Cheat Sheet Modal -->
+    <div id="cheatsheet-modal" class="modal-overlay hidden">
+      <div class="modal-card modal-large">
+        <div class="modal-header">
+          <h2>📜 Resume Project & Interview Cheat Sheet</h2>
+          <button id="cheatsheet-close" class="ai-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="cheatsheet-section">
+            <h3>📌 Copy & Paste Resume Bullet Points for This Project</h3>
+            <pre class="code-box"><code>### NAVA PLATFORM HUB — Autonomous AI Cloud & Telemetry Console
+Tech Stack: JavaScript (ES6+), HTML5 Canvas, Telemetry APIs, vLLM & DCGM Metrics, InfiniBand/RoCEv2
+
+• Architected an enterprise-grade AI-native GPU cloud console for real-time fleet monitoring, inference engine benchmarking, and self-healing infrastructure operations.
+• Engineered live telemetry dashboard tracking vLLM, SGLang, and TensorRT-LLM serving engines; visualized Time-To-First-Token (TTFT), Inter-Token Latency (ITL), and KV-Cache paging.
+• Implemented bare-metal SRE observability module integrating NVIDIA DCGM hardware metrics and real-time Xid error detection (e.g. Xid 79) with automated node isolation runbooks.
+• Visualized high-throughput GPU backend network fabric (RoCEv2, InfiniBand, GPUDirect RDMA) over Leaf-Spine topology with PFC/ECN congestion management alerts.
+• Developed an interactive AI Workload Flight Simulator to benchmark FP8/AWQ quantization performance and speculative decoding (EAGLE) speedups before cloud deployment.</code></pre>
+          </div>
+
+          <div class="cheatsheet-section">
+            <h3>🎯 Fast Interview Talking Points (Role-by-Role)</h3>
+            <ul class="cheatsheet-list">
+              <li><strong>Inference Systems:</strong> "I built real-time telemetry for vLLM, SGLang, and TensorRT-LLM to track PagedAttention KV-Cache pressure and Time-To-First-Token (TTFT)."</li>
+              <li><strong>GPU SRE / Fleet Ops:</strong> "My SRE module tracks NVIDIA DCGM metrics and listens for Linux kernel Xid errors like Xid 79 (GPU fallen off PCIe bus), triggering automated node-drain runbooks."</li>
+              <li><strong>GPU Networking:</strong> "The network view visualizes Clos / Leaf-Spine topologies and tracks 800G RoCEv2 / InfiniBand GPUDirect RDMA throughput with PFC pause frame alerts."</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- AI Assistant Overlay -->
@@ -295,10 +394,9 @@
             <ul>
               <li>Deploy infrastructure with natural language</li>
               <li>Choose the right GPU for your workload</li>
-              <li>Generate Terraform/YAML configs</li>
+              <li>Generate Terraform/YAML configs for vLLM & SGLang</li>
               <li>Simulate workloads before deployment</li>
             </ul>
-            <p>Try one of the quick actions below, or type your request!</p>
           </div>
         </div>
       </div>
@@ -306,9 +404,8 @@
       <div class="ai-chips" id="ai-chips">
         <button class="ai-chip" data-prompt="Deploy an LLM training environment with 4x H100 GPUs and 2TB storage">🚀 Deploy LLM Training Env</button>
         <button class="ai-chip" data-prompt="What's the best GPU for fine-tuning Llama 3?">🎯 Best GPU for Llama 3?</button>
-        <button class="ai-chip" data-prompt="Simulate inference endpoint with 2x A100 GPUs">🧪 Simulate Inference</button>
-        <button class="ai-chip" data-prompt="Show me cost comparison between H100 and A100 for training">💰 H100 vs A100 Cost</button>
-        <button class="ai-chip" data-prompt="Scale my Kubernetes cluster to 8 nodes">⚡ Scale K8s Cluster</button>
+        <button class="ai-chip" data-prompt="Simulate vLLM inference endpoint with 2x A100 GPUs">⚡ Simulate vLLM Endpoint</button>
+        <button class="ai-chip" data-prompt="Explain Xid 79 error remediation">🛠️ Remediate Xid 79</button>
       </div>
 
       <div class="ai-input-area">
@@ -319,49 +416,12 @@
       </div>
     </div>
 
-    <!-- Provision Modal -->
-    <div id="provision-modal" class="modal-overlay hidden">
-      <div class="modal-card">
-        <h2>Provision New Cluster</h2>
-        <div class="modal-form">
-          <div class="config-group">
-            <label>Cluster Name</label>
-            <input type="text" id="prov-name" value="gpu-cluster-01" />
-          </div>
-          <div class="config-group">
-            <label>Type</label>
-            <select id="prov-type">
-              <option value="9ac">9AC — Adaptive Compute</option>
-              <option value="9ak">9AK — Autonomous Kubernetes</option>
-            </select>
-          </div>
-          <div class="config-group">
-            <label>GPU</label>
-            <select id="prov-gpu">
-              <option value="h100">H100 SXM 80GB</option>
-              <option value="a100">A100 80GB</option>
-              <option value="b200">B200 SXM 192GB</option>
-            </select>
-          </div>
-          <div class="config-group">
-            <label>Nodes</label>
-            <input type="range" id="prov-nodes" min="1" max="16" value="4" />
-            <span class="range-value" id="prov-nodes-val">4</span>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="modal-btn secondary" id="prov-cancel">Cancel</button>
-          <button class="modal-btn primary" id="prov-deploy">🚀 Deploy Cluster</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Pitch Mode Overlay -->
     <div id="pitch-overlay" class="hidden">
       <div id="pitch-highlight" class="pitch-highlight"></div>
       <div id="pitch-tooltip" class="pitch-tooltip">
         <div class="pitch-header">
-          <span class="pitch-step-counter">Step <span id="pitch-step-num">1</span>/4</span>
+          <span class="pitch-step-counter">Step <span id="pitch-step-num">1</span>/5</span>
           <h3 id="pitch-title">Title</h3>
         </div>
         <div class="pitch-body" id="pitch-body">
