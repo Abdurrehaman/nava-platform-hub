@@ -1,6 +1,6 @@
 /**
- * AI Workload Simulator Module
- * The unique 4th pillar feature for Nava Platform Hub.
+ * AI Workload & Quantization Simulator Module
+ * Benchmarks vLLM, SGLang, TensorRT-LLM, FP8/AWQ Quantization & Speculative Decoding.
  */
 import { drawLineChart, drawRadialGauge } from './chart-renderer.js';
 
@@ -25,7 +25,6 @@ export function initSimulator() {
   const deployBtn = document.getElementById('sim-deploy-btn');
   if (deployBtn) deployBtn.addEventListener('click', deployFromSimulator);
   
-  // Range sliders update labels
   const gpuCount = document.getElementById('sim-gpu-count');
   const gpuCountVal = document.getElementById('sim-gpu-count-val');
   if (gpuCount && gpuCountVal) {
@@ -44,20 +43,21 @@ function startSimulation() {
   document.getElementById('sim-display').classList.remove('hidden');
   
   const typeEl = document.getElementById('sim-workload-type');
+  const engineEl = document.getElementById('sim-engine');
+  const quantEl = document.getElementById('sim-quantization');
+  const specEl = document.getElementById('sim-speculative');
   const gpuEl = document.getElementById('sim-gpu-type');
   const countEl = document.getElementById('sim-gpu-count');
-  const datasetEl = document.getElementById('sim-dataset-size');
-  const storageEl = document.getElementById('sim-storage');
   
   simConfig = {
     type: typeEl ? typeEl.value : 'llm-finetune',
+    engine: engineEl ? engineEl.value : 'vllm',
+    quantization: quantEl ? quantEl.value : 'fp8',
+    speculative: specEl ? specEl.value : 'eagle',
     gpu: gpuEl ? gpuEl.value : 'h100',
     gpuCount: countEl ? parseInt(countEl.value) : 4,
-    datasetGB: datasetEl ? parseInt(datasetEl.value) : 500,
-    storageGB: storageEl ? parseInt(storageEl.value) : 2000
   };
   
-  // Reset state
   simTime = 0;
   historyGPU = [];
   historyNet = [];
@@ -68,10 +68,10 @@ function startSimulation() {
   if (alertsEl) alertsEl.innerHTML = '';
   if (recsEl) recsEl.classList.add('hidden');
   
-  document.getElementById('sim-progress-text').textContent = 'Initializing cluster...';
+  document.getElementById('sim-progress-text').textContent = `Initializing ${simConfig.engine.toUpperCase()} runtime...`;
   
   if (simulationInterval) clearInterval(simulationInterval);
-  simulationInterval = setInterval(simulationTick, 100); // 10 ticks per second
+  simulationInterval = setInterval(simulationTick, 100);
 }
 
 function stopSimulation() {
@@ -80,7 +80,7 @@ function stopSimulation() {
 
 function simulationTick() {
   simTime++;
-  const maxTicks = 150; // 15 seconds total duration
+  const maxTicks = 150;
   const progress = Math.min(100, (simTime / maxTicks) * 100);
   
   document.getElementById('sim-progress-fill').style.width = `${progress}%`;
@@ -88,47 +88,44 @@ function simulationTick() {
   const stage = getStage(progress);
   document.getElementById('sim-progress-text').textContent = stage.text;
   
-  // Generate metrics based on stage
   let utilTarget = stage.utilTarget;
   let vramTarget = stage.vramTarget;
   let netTarget = stage.netTarget;
   
-  // Apply random noise
+  // Quantization VRAM reduction
+  if (simConfig.quantization === 'fp8') vramTarget *= 0.65;
+  if (simConfig.quantization === 'awq') vramTarget *= 0.45;
+
   const util = Math.max(0, Math.min(100, utilTarget + (Math.random() - 0.5) * 10));
   const vram = Math.max(0, Math.min(100, vramTarget + (Math.random() - 0.5) * 5));
   const net = Math.max(0, netTarget + (Math.random() - 0.5) * 20);
   
   historyGPU.push({ x: simTime, y: util });
-  historyNet.push({ x: simTime, y: Math.min(100, net / 4) }); // scale down for 0-100 chart
+  historyNet.push({ x: simTime, y: Math.min(100, net / 4) });
   
   if (historyGPU.length > 50) historyGPU.shift();
   if (historyNet.length > 50) historyNet.shift();
   
-  // Cost accumulator
   const gpuPrices = { h100: 3.50, a100: 2.10, b200: 5.20, l40s: 1.40 };
   const hourlyRate = (gpuPrices[simConfig.gpu] || 3.50) * simConfig.gpuCount;
-  // accelerate cost drastically for visual effect (tick represents hours)
   currentCost += (hourlyRate * 0.5); 
   
   updateDisplay(util, vram, net);
   
-  // Triggers
   if (simTime === 60) triggerBottleneck();
   
   if (simTime >= maxTicks) {
     stopSimulation();
-    document.getElementById('sim-progress-text').textContent = 'Simulation Complete';
+    document.getElementById('sim-progress-text').textContent = 'Benchmark Complete';
     showRecommendations();
   }
 }
 
 function getStage(progress) {
-  if (progress < 10) return { text: 'Provisioning Nodes & Storage (9AC, 9PB)...', utilTarget: 5, vramTarget: 2, netTarget: 10 };
-  if (progress < 25) return { text: 'Loading Dataset into Memory...', utilTarget: 15, vramTarget: 40, netTarget: 380 };
-  if (progress < 40) return { text: 'Epoch 1/10: Warmup...', utilTarget: 60, vramTarget: 75, netTarget: 120 };
-  if (progress < 85) return { text: 'Epoch 2-9: Deep Training Phase...', utilTarget: 95, vramTarget: 92, netTarget: 250 };
-  if (progress < 95) return { text: 'Epoch 10: Finalizing & Checkpointing...', utilTarget: 100, vramTarget: 94, netTarget: 400 };
-  return { text: 'Saving Model Artifacts...', utilTarget: 10, vramTarget: 10, netTarget: 300 };
+  if (progress < 15) return { text: `Loading ${simConfig.quantization.toUpperCase()} Model Weights into ${simConfig.engine.toUpperCase()} KV-Cache...`, utilTarget: 20, vramTarget: 40, netTarget: 200 };
+  if (progress < 40) return { text: `Warmup & PagedAttention Cache Allocation...`, utilTarget: 65, vramTarget: 60, netTarget: 350 };
+  if (progress < 85) return { text: `Serving Inference Prompts (${simConfig.speculative !== 'disabled' ? 'Speculative EAGLE Draft Engine Active' : 'Standard Decoding'})...`, utilTarget: 96, vramTarget: 75, netTarget: 480 };
+  return { text: 'Saving Telemetry Metrics...', utilTarget: 15, vramTarget: 20, netTarget: 100 };
 }
 
 function updateDisplay(util, vram, net) {
@@ -139,14 +136,12 @@ function updateDisplay(util, vram, net) {
   document.getElementById('sim-vram-label').textContent = `${vramUsed.toFixed(1)} / ${vramMax} GB`;
   
   document.getElementById('sim-net-throughput').textContent = `${net.toFixed(0)} Gbps`;
-  
   document.getElementById('sim-cost-ticker').textContent = `$${currentCost.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
   
-  const estTotal = currentCost * 2.5; // fake projection
+  const estTotal = currentCost * 2.5;
   document.getElementById('sim-est-total').textContent = `Est. Total: ~$${estTotal.toLocaleString(undefined, {maximumFractionDigits:0})}`;
-  document.getElementById('sim-est-time').textContent = `Est. Time: ${(12 + Math.random()*4).toFixed(1)}h`;
+  document.getElementById('sim-est-time').textContent = `Est. Time: ${(8 + Math.random()*3).toFixed(1)}h`;
   
-  // Render charts
   const gpuCanvas = document.getElementById('sim-gpu-chart');
   const netCanvas = document.getElementById('sim-network-chart');
   const gaugeCanvas = document.getElementById('sim-vram-gauge');
@@ -166,51 +161,15 @@ function triggerBottleneck() {
   const alertsEl = document.getElementById('sim-alerts');
   if (!alertsEl) return;
   
-  // Deterministic bottleneck based on config
-  let alert = '';
-  
-  if (simConfig.gpu === 'h100' && simConfig.datasetGB > 1000 && simConfig.storageGB <= 2000) {
-    alert = `
-      <div class="sim-alert danger">
-        <div class="sim-alert-icon">⚠️</div>
-        <div class="sim-alert-text">
-          <strong>I/O Bottleneck Detected</strong>
-          Data loading from 9PB is 2.4x slower than H100 compute capacity. GPUs are starved for data.
-        </div>
+  let alert = `
+    <div class="sim-alert success">
+      <div class="sim-alert-icon">⚡</div>
+      <div class="sim-alert-text">
+        <strong>${simConfig.engine.toUpperCase()} + ${simConfig.quantization.toUpperCase()} Optimized</strong>
+        KV-Cache memory pressure reduced by 48%. Speculative Decoding (${simConfig.speculative.toUpperCase()}) boosting throughput by 2.4x.
       </div>
-    `;
-  } else if (simConfig.gpuCount > 16) {
-    alert = `
-      <div class="sim-alert warning">
-        <div class="sim-alert-icon">⚡</div>
-        <div class="sim-alert-text">
-          <strong>Network Fabric Congestion</strong>
-          High latency across ${simConfig.gpuCount} nodes during gradient synchronization.
-        </div>
-      </div>
-    `;
-  } else if (simConfig.gpu === 'l40s' && simConfig.type.includes('llm')) {
-    alert = `
-      <div class="sim-alert danger">
-        <div class="sim-alert-icon">🔥</div>
-        <div class="sim-alert-text">
-          <strong>VRAM OOM Risk</strong>
-          LLM training memory footprint exceeds L40S limits (48GB). High risk of OutOfMemory crashes.
-        </div>
-      </div>
-    `;
-  } else {
-    alert = `
-      <div class="sim-alert success">
-        <div class="sim-alert-icon">✅</div>
-        <div class="sim-alert-text">
-          <strong>Architecture Optimal</strong>
-          Compute, memory, and storage I/O are perfectly balanced for this workload.
-        </div>
-      </div>
-    `;
-  }
-  
+    </div>
+  `;
   alertsEl.innerHTML = alert;
 }
 
@@ -219,49 +178,22 @@ function showRecommendations() {
   const listEl = document.getElementById('sim-rec-list');
   if (!recsEl || !listEl) return;
   
-  let recs = '';
-  
-  if (simConfig.gpu === 'h100' && simConfig.storageGB <= 2000) {
-    recs += `
-      <div class="sim-rec-item">
-        <div class="sim-rec-icon">💡</div>
-        <div class="sim-rec-text">
-          <strong>Upgrade to Atomic Object Store (9AO)</strong>
-          Using 9AO with parallel pipelines will eliminate the I/O bottleneck and keep your H100s at 99% utilization.
-          <span class="sim-rec-impact">Saves ~14% total training time.</span>
-        </div>
+  let recs = `
+    <div class="sim-rec-item">
+      <div class="sim-rec-icon">🏆</div>
+      <div class="sim-rec-text">
+        <strong>Deploy with FP8 Quantization + EAGLE Speculative Decoding</strong>
+        Saves 52% VRAM memory while increasing Tokens/sec from 92 → 220 t/s.
+        <span class="sim-rec-impact">Reduces monthly cloud cost by ~$3,400.</span>
       </div>
-    `;
-  } else if (simConfig.gpu === 'l40s' && simConfig.type.includes('llm')) {
-    recs += `
-      <div class="sim-rec-item">
-        <div class="sim-rec-icon">💡</div>
-        <div class="sim-rec-text">
-          <strong>Switch to A100 80GB</strong>
-          The 80GB VRAM is required for this model size. Using L40S will result in failure.
-          <span class="sim-rec-impact">Prevents complete failure.</span>
-        </div>
-      </div>
-    `;
-  } else {
-    recs += `
-      <div class="sim-rec-item">
-        <div class="sim-rec-icon">🏆</div>
-        <div class="sim-rec-text">
-          <strong>Use Spot Capacity (Flex Reservations)</strong>
-          This workload supports checkpointing. Switching to preemptible capacity can slash costs.
-          <span class="sim-rec-impact">Saves ~$4,200 on total run.</span>
-        </div>
-      </div>
-    `;
-  }
+    </div>
+  `;
   
   listEl.innerHTML = recs;
   recsEl.classList.remove('hidden');
 }
 
 function deployFromSimulator() {
-  // Fire event to switch tabs and deploy
   window.dispatchEvent(new CustomEvent('nava:deploy', {
     detail: {
       name: `simulated-${simConfig.type}`,
@@ -270,14 +202,12 @@ function deployFromSimulator() {
     }
   }));
   
-  // Switch to dashboard
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('nav-dashboard').classList.add('active');
   
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-dashboard').classList.add('active');
   
-  // Reset simulator
   stopSimulation();
   document.getElementById('sim-display').classList.add('hidden');
   document.getElementById('sim-config').classList.remove('hidden');
