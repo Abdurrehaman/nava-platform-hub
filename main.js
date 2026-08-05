@@ -1,14 +1,13 @@
 import './style.css';
 import { initGPUSREOps } from './modules/gpu-sre-ops.js';
 
-// Base API URL for Python FastAPI server
 const API_BASE_URL = 'http://localhost:8000';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize GPU SRE Ops module
+  // Initialize SRE Ops module
   initGPUSREOps();
 
-  // Navigation Tabs
+  // Tab Navigation
   const tabs = document.querySelectorAll('.nav-tab[data-view]');
   const views = document.querySelectorAll('.view');
 
@@ -29,19 +28,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Cheat Sheet Modal
-  const cheatBtn = document.getElementById('cheatsheet-btn');
-  const cheatModal = document.getElementById('cheatsheet-modal');
-  const cheatClose = document.getElementById('cheatsheet-close');
+  // Diagnostics Form Submission Handler
+  const diagForm = document.getElementById('diag-form');
+  const resultsOutput = document.getElementById('diag-results-output');
+  const healthBadge = document.getElementById('diag-health-score');
 
-  if (cheatBtn && cheatModal) {
-    cheatBtn.addEventListener('click', () => cheatModal.classList.remove('hidden'));
-  }
-  if (cheatClose && cheatModal) {
-    cheatClose.addEventListener('click', () => cheatModal.classList.add('hidden'));
+  if (diagForm) {
+    diagForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        gpu_count: parseInt(document.getElementById('diag-gpu-count').value) || 8,
+        gpu_model: document.getElementById('diag-gpu-model').value,
+        workload_type: document.getElementById('diag-workload').value,
+        cooling_type: document.getElementById('diag-cooling').value,
+        pcie_gen: document.getElementById('diag-pcie').value,
+        power_limit_w: parseInt(document.getElementById('diag-power').value) || 700,
+        vram_gb: parseInt(document.getElementById('diag-vram').value) || 80,
+      };
+
+      if (resultsOutput) {
+        resultsOutput.innerHTML = '<div class="placeholder-msg">⚡ Running Python Backend Flaw Analysis...</div>';
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/diagnose`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+        const report = await res.json();
+        renderDiagnosticReport(report);
+      } catch (err) {
+        // Standalone Client-Side Fallback Analysis if backend is not running
+        const report = fallbackDiagnosticAnalysis(payload);
+        renderDiagnosticReport(report);
+      }
+    });
   }
 
-  // Python API Inspector Buttons
+  // Python API Explorer Buttons
   const apiBtns = document.querySelectorAll('.api-endpoint-btn');
   const responseBox = document.getElementById('api-response-box');
 
@@ -59,14 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         if (responseBox) {
-          responseBox.textContent = `// Note: Ensure Python FastAPI server is running (python -m uvicorn backend.app:app --reload)\n// Standalone Demo Fallback Response for ${endpoint}:\n\n` + JSON.stringify({
-            status: "DEMO_STANDALONE",
+          responseBox.textContent = `// Note: Ensure Python FastAPI server is running (python -m uvicorn backend.app:app --reload)\n// Demo Standalone Response for ${endpoint}:\n\n` + JSON.stringify({
+            status: "STANDALONE_DEMO",
             endpoint: endpoint,
-            info: "Start backend server to query live SQLite database",
+            info: "Start Python backend server for live SQLite database connection",
             sample_data: endpoint.includes('nodes') ? [
               { id: "gpu-node-01", name: "GPU Node 01", model: "NVIDIA H100 SXM 80GB", status: "healthy" },
               { id: "gpu-node-06", name: "GPU Node 06", model: "NVIDIA L40S 48GB", status: "isolated", k8s_cordoned: true }
-            ] : { info: "FastAPI REST Server Connected" }
+            ] : { info: "FastAPI REST Server API Ready" }
           }, null, 2);
         }
       }
@@ -74,75 +102,86 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// PITCH MODE LOGIC
-const pitchSteps = [
-  { target: '#view-sre', title: '1. Bare-Metal GPU Reliability & SRE Platform', script: "Welcome to Nava GPU SRE Sentinel. Built with a Python FastAPI backend and SQLite database, this platform monitors hyperscale bare-metal GPU clusters, tracking compute health and hardware errors.", position: 'bottom' },
-  { target: '#dcgm-stats-grid', title: '2. NVIDIA DCGM Hardware Observability', script: "Our Python engine ingests NVIDIA DCGM metrics in real time. We monitor SM Occupancy %, Power Draw in Watts, Temperature °C, and PCIe bus bandwidth across H100, A100, and B200 SXM nodes.", position: 'bottom' },
-  { target: '#xid-error-feed', title: '3. Kernel Xid 79 Errors & Self-Healing Runbooks', script: "When a hardware failure like Xid 79 occurs (GPU fallen off PCIe bus), our Python self-healing worker automatically cordons the node in Kubernetes, drains active workloads, issues a PCIe bus reset, and logs an immutable audit trail.", position: 'top' }
-];
+function renderDiagnosticReport(report) {
+  const resultsOutput = document.getElementById('diag-results-output');
+  const healthBadge = document.getElementById('diag-health-score');
 
-let currentPitchStep = 0;
-
-document.addEventListener('DOMContentLoaded', () => {
-  const pitchBtn = document.getElementById('pitch-mode-btn');
-  const overlay = document.getElementById('pitch-overlay');
-  const highlight = document.getElementById('pitch-highlight');
-  const tooltip = document.getElementById('pitch-tooltip');
-
-  if (pitchBtn) pitchBtn.addEventListener('click', startPitch);
-
-  document.getElementById('pitch-close')?.addEventListener('click', endPitch);
-  document.getElementById('pitch-next')?.addEventListener('click', () => showPitchStep(currentPitchStep + 1));
-  document.getElementById('pitch-prev')?.addEventListener('click', () => showPitchStep(currentPitchStep - 1));
-
-  function startPitch() {
-    currentPitchStep = 0;
-    if (overlay) overlay.classList.remove('hidden');
-    setTimeout(() => {
-      if (overlay) overlay.classList.add('active');
-      showPitchStep(0);
-    }, 50);
-  }
-
-  function endPitch() {
-    if (overlay) overlay.classList.remove('active');
-    setTimeout(() => { if (overlay) overlay.classList.add('hidden'); }, 300);
-  }
-
-  function showPitchStep(index) {
-    if (index < 0 || index >= pitchSteps.length) {
-      endPitch();
-      return;
+  if (healthBadge) {
+    healthBadge.textContent = `Fleet Score: ${report.health_score}%`;
+    if (report.health_score < 70) {
+      healthBadge.style.color = '#FF6B6B';
+      healthBadge.style.borderColor = '#FF6B6B';
+    } else {
+      healthBadge.style.color = '#00E5C8';
+      healthBadge.style.borderColor = '#00E5C8';
     }
-    currentPitchStep = index;
-    const step = pitchSteps[index];
-
-    document.getElementById('pitch-step-num').textContent = index + 1;
-    document.getElementById('pitch-title').textContent = step.title;
-    document.getElementById('pitch-body').textContent = step.script;
-
-    setTimeout(() => {
-      const targetEl = document.querySelector(step.target);
-      if (!targetEl) return;
-
-      const rect = targetEl.getBoundingClientRect();
-
-      if (highlight) {
-        highlight.style.top = (rect.top - 10) + 'px';
-        highlight.style.left = (rect.left - 10) + 'px';
-        highlight.style.width = (rect.width + 20) + 'px';
-        highlight.style.height = (rect.height + 20) + 'px';
-      }
-
-      if (tooltip) {
-        if (step.position === 'bottom') {
-          tooltip.style.top = (rect.bottom + 20) + 'px';
-          tooltip.style.left = Math.max(20, rect.left + (rect.width/2) - 175) + 'px';
-        } else if (step.position === 'top') {
-          tooltip.style.top = Math.max(20, rect.top - 180) + 'px';
-          tooltip.style.left = Math.max(20, rect.left + (rect.width/2) - 175) + 'px';
-        }
-      }
-    }, 120);
   }
-});
+
+  if (!resultsOutput) return;
+
+  const flawsHtml = report.flaws.map(f => `
+    <div class="flaw-card ${f.severity.toLowerCase()}">
+      <div class="flaw-header">
+        <span>${f.category.toUpperCase()}: ${f.title}</span>
+        <span>${f.severity}</span>
+      </div>
+      <div class="flaw-desc">${f.description}</div>
+      <div class="flaw-impact">Expected Impact: ${f.impact}</div>
+    </div>
+  `).join('');
+
+  const recsHtml = report.recommendations.map(r => `<li>💡 ${r}</li>`).join('');
+
+  resultsOutput.innerHTML = `
+    ${flawsHtml}
+    <div class="rec-box">
+      <h4>🛠️ Recommended SRE Optimization Actions:</h4>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; margin-top: 6px;">
+        ${recsHtml}
+      </ul>
+    </div>
+  `;
+}
+
+function fallbackDiagnosticAnalysis(p) {
+  let score = 100;
+  const flaws = [];
+  const recs = [];
+
+  if (p.gpu_model.includes('H100') && p.cooling_type === 'air') {
+    flaws.append ? null : flaws.push({
+      category: 'Thermal',
+      severity: 'CRITICAL',
+      title: 'Thermal Throttling Vulnerability (>85°C)',
+      description: `Air cooling is insufficient for ${p.gpu_model} running at ${p.power_limit_w}W. Dynamic SM clock downclocking (Xid 43) will occur.`,
+      impact: '20-35% computing throughput degradation'
+    });
+    recs.push('Switch to Direct Liquid Cooling (DLC) to keep junction temps under 72°C.');
+    score -= 25;
+  }
+
+  if (p.pcie_gen === 'gen4' && p.gpu_count >= 8) {
+    flaws.push({
+      category: 'Interconnect',
+      severity: 'WARNING',
+      title: 'PCIe Gen 4 Host-to-Device Bottleneck',
+      description: `PCIe Gen 4 (32 GB/s) limits multi-node gradient synchronization across ${p.gpu_count} GPUs.`,
+      impact: 'Increases inter-node latency by 2.2x'
+    });
+    recs.push('Upgrade host bus to PCIe Gen 5 (64 GB/s) or configure GPUDirect RDMA over 800G RoCEv2.');
+    score -= 15;
+  }
+
+  if (flaws.length === 0) {
+    flaws.push({
+      category: 'Optimal',
+      severity: 'INFO',
+      title: 'No Critical Hardware Flaws Detected',
+      description: `Configuration is well-balanced for ${p.workload_type}.`,
+      impact: 'Operating at peak theoretical capacity'
+    });
+    recs.push('Configuration is optimal for day-2 operations.');
+  }
+
+  return { health_score: Math.max(15, score), flaws, recommendations: recs };
+}

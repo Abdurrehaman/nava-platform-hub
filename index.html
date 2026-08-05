@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nava GPU SRE Sentinel — Autonomous GPU Fleet Reliability & Self-Healing Platform</title>
-  <meta name="description" content="Bare-metal GPU SRE fleet operations console with Python FastAPI backend, DCGM observability, kernel Xid error detection, and self-healing runbooks." />
+  <title>Nava GPU SRE Sentinel — Autonomous GPU Fleet Reliability & Hardware Flaw Diagnostics</title>
+  <meta name="description" content="Bare-metal GPU SRE fleet operations console with Python FastAPI backend, DCGM observability, kernel Xid error detection, cluster flaw diagnostics, and self-healing runbooks." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -29,20 +29,22 @@
       <nav class="nav-center">
         <button class="nav-tab active" data-view="sre" id="nav-sre">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          GPU SRE & Fleet Ops
+          GPU SRE Operations
+        </button>
+        <button class="nav-tab" data-view="diagnostics" id="nav-diagnostics">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5"/></svg>
+          Cluster Flaw Diagnostics
         </button>
         <button class="nav-tab" data-view="api" id="nav-api">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          Python API Inspector
+          Python API Explorer
         </button>
       </nav>
       <div class="nav-right">
-        <button id="cheatsheet-btn" class="nav-tab" style="color: #00E5C8; border: 1px solid rgba(0, 229, 200, 0.3); background: rgba(0, 229, 200, 0.08); margin-right: 8px;">
-          📖 40 LPA Interview Bible
-        </button>
-        <button id="pitch-mode-btn" class="nav-tab" style="color: var(--warning); border: 1px solid var(--warning-bg); background: rgba(255, 170, 0, 0.05); margin-right: 8px;">
-          ⚡ Pitch Mode
-        </button>
+        <div class="status-indicator">
+          <span class="status-dot pulse"></span>
+          <span class="status-text">FastAPI Backend Connected</span>
+        </div>
       </div>
     </header>
 
@@ -51,7 +53,6 @@
 
     <!-- Main Layout -->
     <div id="main-layout">
-      <!-- Main Content Area -->
       <main id="main-content" style="padding: 24px 40px;">
         <!-- GPU SRE & Fleet Ops View -->
         <section id="view-sre" class="view active">
@@ -79,16 +80,94 @@
           </div>
         </section>
 
-        <!-- Python API Inspector View -->
+        <!-- Cluster Flaw Diagnostics View -->
+        <section id="view-diagnostics" class="view">
+          <div class="section-header">
+            <h2>🔍 Interactive Cluster Flaw & Bottleneck Diagnostics</h2>
+            <p class="section-subtitle">Input your GPU cluster parameters to execute Python backend flaw analysis for thermal, PCIe, VRAM, and power sag vulnerabilities.</p>
+          </div>
+
+          <div class="diagnostics-grid">
+            <!-- Configuration Inputs Panel -->
+            <div class="panel-card">
+              <h3>Cluster Configuration Parameters</h3>
+              <form id="diag-form" class="diag-form">
+                <div class="config-group margin-top-sm">
+                  <label>GPU Count</label>
+                  <input type="number" id="diag-gpu-count" value="8" min="1" max="128" />
+                </div>
+                <div class="config-group margin-top-sm">
+                  <label>GPU Hardware Model</label>
+                  <select id="diag-gpu-model">
+                    <option value="H100 SXM" selected>NVIDIA H100 SXM (700W)</option>
+                    <option value="B200 SXM">NVIDIA B200 SXM (1000W)</option>
+                    <option value="A100 SXM">NVIDIA A100 SXM (400W)</option>
+                    <option value="L40S">NVIDIA L40S (350W)</option>
+                  </select>
+                </div>
+                <div class="config-group margin-top-sm">
+                  <label>Target Workload Type</label>
+                  <select id="diag-workload">
+                    <option value="LLM Fine-tuning" selected>LLM Fine-tuning (LLaMA-3 70B)</option>
+                    <option value="Hyperscale Inference">Hyperscale Inference Serving</option>
+                    <option value="Distributed Pre-training">Distributed Pre-training</option>
+                  </select>
+                </div>
+                <div class="config-group margin-top-sm">
+                  <label>Cooling Architecture</label>
+                  <select id="diag-cooling">
+                    <option value="air" selected>Standard Air Cooling</option>
+                    <option value="liquid">Direct Liquid Cooling (DLC)</option>
+                  </select>
+                </div>
+                <div class="config-group margin-top-sm">
+                  <label>PCIe Generation</label>
+                  <select id="diag-pcie">
+                    <option value="gen4" selected>PCIe Gen 4 (32 GB/s)</option>
+                    <option value="gen5">PCIe Gen 5 (64 GB/s)</option>
+                  </select>
+                </div>
+                <div class="config-group margin-top-sm">
+                  <label>Power Cap Limit (Watts)</label>
+                  <input type="number" id="diag-power" value="700" step="50" min="300" max="1000" />
+                </div>
+                <div class="config-group margin-top-sm">
+                  <label>VRAM per GPU (GB)</label>
+                  <input type="number" id="diag-vram" value="80" step="8" min="24" max="192" />
+                </div>
+
+                <button type="submit" id="btn-run-diag" class="diag-submit-btn margin-top">
+                  ⚡ Run Backend Hardware Diagnostics
+                </button>
+              </form>
+            </div>
+
+            <!-- Flaw Analysis Report Output Panel -->
+            <div class="panel-card">
+              <div class="diag-report-header">
+                <h3>Backend Flaw Analysis Report</h3>
+                <span id="diag-health-score" class="score-badge">Score: --</span>
+              </div>
+
+              <div id="diag-results-output" class="diag-results-output margin-top">
+                <div class="placeholder-msg">
+                  Click <strong>"Run Backend Hardware Diagnostics"</strong> to execute Python backend analysis on your cluster parameters.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Python API Explorer View -->
         <section id="view-api" class="view">
           <div class="section-header">
-            <h2>🔌 Live Python FastAPI REST API Inspector</h2>
-            <p class="section-subtitle">Real-time HTTP requests connecting this Frontend to the Python Backend (`http://localhost:8000/api/v1`)</p>
+            <h2>🔌 Live Python FastAPI REST API Explorer</h2>
+            <p class="section-subtitle">Execute live HTTP REST API queries to the Python Backend (`http://localhost:8000/api/v1`)</p>
           </div>
 
           <div class="api-inspector-grid">
             <div class="panel-card">
-              <h3>API Endpoints Explorer</h3>
+              <h3>REST API Endpoints</h3>
               <div class="api-btn-group">
                 <button class="api-endpoint-btn" data-endpoint="/api/v1/nodes">GET /api/v1/nodes</button>
                 <button class="api-endpoint-btn" data-endpoint="/api/v1/telemetry/dcgm">GET /api/v1/telemetry/dcgm</button>
@@ -98,62 +177,12 @@
             </div>
 
             <div class="panel-card">
-              <h3>Raw JSON Response Output</h3>
+              <h3>Raw JSON API Output</h3>
               <pre class="code-box" id="api-response-box" style="height: 380px; overflow-y: auto;"><code>Select an endpoint above to execute a live GET request to the Python FastAPI server...</code></pre>
             </div>
           </div>
         </section>
       </main>
-    </div>
-
-    <!-- 40 LPA Interview Bible Modal -->
-    <div id="cheatsheet-modal" class="modal-overlay hidden">
-      <div class="modal-card modal-large">
-        <div class="modal-header">
-          <h2>📖 Nava GPU SRE 40 LPA Interview Master Guide</h2>
-          <button id="cheatsheet-close" class="ai-close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="cheatsheet-section">
-            <h3>📌 Copy & Paste Resume Bullet Points for This Project</h3>
-            <pre class="code-box"><code>### NAVA GPU SRE SENTINEL — Autonomous Fleet Reliability & Self-Healing Platform
-Tech Stack: Python 3, FastAPI, SQLite, SQLAlchemy, REST APIs, JavaScript (ES6+), HTML5 Canvas, Docker
-
-• Built a full-stack bare-metal GPU fleet observability and automated remediation platform targeting hyperscale AI clouds.
-• Engineered Python FastAPI backend REST APIs providing real-time hardware telemetry ingestion, NVIDIA DCGM metrics, and kernel error logging.
-• Developed an automated self-healing background worker in Python to detect Xid 79 hardware failures (GPU PCIe bus loss), execute node cordoning, and trigger automated pod eviction runbooks.
-• Implemented an interactive single-page dashboard with real-time hardware metrics (SM occupancy, thermal draw, PCIe bandwidth) and an API inspection log.</code></pre>
-          </div>
-
-          <div class="cheatsheet-section">
-            <h3>🎯 2-Hour Interview Cheat Sheet Q&A</h3>
-            <ul class="cheatsheet-list">
-              <li><strong>What is Xid 79?</strong> "Xid 79 occurs when a GPU physically falls off the PCIe bus due to link degradation or hardware failure. Our Python runbook immediately cordons the node in Kubernetes, evicts running pods, and executes an in-band PCIe reset (`nvidia-smi -r`)."</li>
-              <li><strong>What is NVIDIA DCGM?</strong> "Data Center GPU Manager interfaces directly with NVML to track SM occupancy %, VRAM temperatures, power draw in Watts, and PCIe error replay counters."</li>
-              <li><strong>How does the Python Backend work?</strong> "Built using FastAPI and SQLite (SQLAlchemy ORM), providing high-throughput REST APIs (`/api/v1/telemetry`, `/api/v1/remediate`) with automated audit logging for every self-healing action."</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Pitch Mode Overlay -->
-    <div id="pitch-overlay" class="hidden">
-      <div id="pitch-highlight" class="pitch-highlight"></div>
-      <div id="pitch-tooltip" class="pitch-tooltip">
-        <div class="pitch-header">
-          <span class="pitch-step-counter">Step <span id="pitch-step-num">1</span>/3</span>
-          <h3 id="pitch-title">Title</h3>
-        </div>
-        <div class="pitch-body" id="pitch-body">
-          Script goes here
-        </div>
-        <div class="pitch-footer">
-          <button id="pitch-prev" class="pitch-btn secondary">Back</button>
-          <button id="pitch-next" class="pitch-btn primary">Next</button>
-          <button id="pitch-close" class="pitch-close-btn">&times;</button>
-        </div>
-      </div>
     </div>
   </div>
 

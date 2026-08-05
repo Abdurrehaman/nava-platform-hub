@@ -1,22 +1,24 @@
 """
 app.py — Main FastAPI REST API Server for Nava GPU SRE Sentinel
 Provides RESTful endpoints for GPU fleet monitoring, DCGM hardware telemetry,
-kernel Xid error logging, and self-healing runbook execution.
+kernel Xid error logging, self-healing runbook execution, and interactive cluster flaw diagnostics.
 """
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 import json
 
 from backend.database import init_db, SessionLocal, GPUNode, DCGMMetric, XidLog, RemediationAudit
 from backend.dcgm_emulator import seed_initial_data, generate_telemetry_tick
 from backend.remediation_engine import execute_remediation_runbook
+from backend.diagnostics import analyze_cluster_flaws
 
 app = FastAPI(
     title="Nava GPU SRE Sentinel API",
-    description="Autonomous GPU Fleet Observability & Self-Healing Remediation REST API",
+    description="Autonomous GPU Fleet Observability, Flaw Diagnostics & Self-Healing Remediation REST API",
     version="1.0.0"
 )
 
@@ -28,6 +30,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class DiagnosticInput(BaseModel):
+    gpu_count: Optional[int] = 8
+    gpu_model: Optional[str] = "H100 SXM"
+    workload_type: Optional[str] = "LLM Fine-tuning"
+    cooling_type: Optional[str] = "air"
+    pcie_gen: Optional[str] = "gen4"
+    power_limit_w: Optional[int] = 700
+    vram_gb: Optional[int] = 80
 
 @app.on_event("startup")
 def startup_event():
@@ -71,7 +82,6 @@ def get_nodes():
 
 @app.get("/api/v1/telemetry/dcgm")
 def get_dcgm_telemetry():
-    # Trigger a fresh telemetry tick
     generate_telemetry_tick()
     db = SessionLocal()
     try:
@@ -124,6 +134,16 @@ def remediate_node(node_id: str, trigger_reason: str = "Xid 79 Hardware Error"):
     if res["status"] == "ERROR":
         raise HTTPException(status_code=400, detail=res["message"])
     return res
+
+@app.post("/api/v1/diagnose")
+def run_cluster_diagnostics(input_data: DiagnosticInput):
+    """
+    Runs real-time hardware flaw analysis on user-submitted cluster inputs.
+    Detects thermal throttling risks, PCIe bottlenecks, VRAM OOM risks, and power under-provisioning.
+    """
+    config = input_data.dict()
+    report = analyze_cluster_flaws(config)
+    return report
 
 @app.get("/api/v1/audits")
 def get_remediation_audits():
