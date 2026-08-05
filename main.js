@@ -1,49 +1,35 @@
 import './style.css';
-import { initDashboard } from './modules/dashboard.js';
-import { initPricing } from './modules/pricing-engine.js';
-import { initAssistant } from './modules/ai-assistant.js';
-import { initSimulator } from './modules/workload-simulator.js';
-import { initInferenceEngine } from './modules/inference-engine.js';
 import { initGPUSREOps } from './modules/gpu-sre-ops.js';
-import { initNetworkFabric } from './modules/network-fabric.js';
 
-// Global Nav Logic
+// Base API URL for Python FastAPI server
+const API_BASE_URL = 'http://localhost:8000';
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Modules
-  initDashboard();
-  initPricing();
-  initAssistant();
-  initSimulator();
-  initInferenceEngine();
+  // Initialize GPU SRE Ops module
   initGPUSREOps();
-  initNetworkFabric();
-  
-  // Tabs
+
+  // Navigation Tabs
   const tabs = document.querySelectorAll('.nav-tab[data-view]');
   const views = document.querySelectorAll('.view');
-  
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       views.forEach(v => v.classList.remove('active'));
-      
+
       tab.classList.add('active');
       const viewName = tab.getAttribute('data-view');
       const targetId = 'view-' + viewName;
       const targetEl = document.getElementById(targetId);
       if (targetEl) targetEl.classList.add('active');
-      
-      if (viewName === 'network') {
-        initNetworkFabric();
-      } else if (viewName === 'inference') {
-        initInferenceEngine();
-      } else if (viewName === 'sre') {
+
+      if (viewName === 'sre') {
         initGPUSREOps();
       }
     });
   });
 
-  // Resume Cheat Sheet Modal logic
+  // Cheat Sheet Modal
   const cheatBtn = document.getElementById('cheatsheet-btn');
   const cheatModal = document.getElementById('cheatsheet-modal');
   const cheatClose = document.getElementById('cheatsheet-close');
@@ -55,56 +41,44 @@ document.addEventListener('DOMContentLoaded', () => {
     cheatClose.addEventListener('click', () => cheatModal.classList.add('hidden'));
   }
 
-  // Provision Modal logic
-  const modal = document.getElementById('provision-modal');
-  const cancelBtn = document.getElementById('prov-cancel');
-  const deployBtn = document.getElementById('prov-deploy');
-  
-  document.querySelectorAll('.provision-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      modal.classList.remove('hidden');
-    });
-  });
-  
-  if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
-  
-  if (deployBtn) {
-    deployBtn.addEventListener('click', () => {
-      modal.classList.add('hidden');
-      const name = document.getElementById('prov-name').value;
-      const type = document.getElementById('prov-type').value;
-      const gpu = document.getElementById('prov-gpu').value;
-      const nodes = document.getElementById('prov-nodes').value;
-      
-      const event = new CustomEvent('nava:deploy', {
-        detail: { name, type, gpu, nodes }
-      });
-      window.dispatchEvent(event);
-    });
-  }
-  
-  const nodesSlider = document.getElementById('prov-nodes');
-  const nodesVal = document.getElementById('prov-nodes-val');
-  if (nodesSlider && nodesVal) {
-    nodesSlider.addEventListener('input', (e) => {
-      nodesVal.textContent = e.target.value;
-    });
-  }
+  // Python API Inspector Buttons
+  const apiBtns = document.querySelectorAll('.api-endpoint-btn');
+  const responseBox = document.getElementById('api-response-box');
 
-  // Simulator shortcut listener
-  window.addEventListener('nava:openSimulator', () => {
-    const simTab = document.querySelector('.nav-tab[data-view="simulator"]');
-    if (simTab) simTab.click();
+  apiBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const endpoint = btn.getAttribute('data-endpoint');
+      if (responseBox) responseBox.textContent = `GET ${endpoint}\nFetching from Python FastAPI backend...`;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}${endpoint}`);
+        if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+        const data = await res.json();
+        if (responseBox) {
+          responseBox.textContent = `// 200 OK — ${API_BASE_URL}${endpoint}\n\n` + JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        if (responseBox) {
+          responseBox.textContent = `// Note: Ensure Python FastAPI server is running (python -m uvicorn backend.app:app --reload)\n// Standalone Demo Fallback Response for ${endpoint}:\n\n` + JSON.stringify({
+            status: "DEMO_STANDALONE",
+            endpoint: endpoint,
+            info: "Start backend server to query live SQLite database",
+            sample_data: endpoint.includes('nodes') ? [
+              { id: "gpu-node-01", name: "GPU Node 01", model: "NVIDIA H100 SXM 80GB", status: "healthy" },
+              { id: "gpu-node-06", name: "GPU Node 06", model: "NVIDIA L40S 48GB", status: "isolated", k8s_cordoned: true }
+            ] : { info: "FastAPI REST Server Connected" }
+          }, null, 2);
+        }
+      }
+    });
   });
 });
 
 // PITCH MODE LOGIC
 const pitchSteps = [
-  { target: '#view-dashboard', title: '1. The Autonomous AI Cloud Console', script: "Welcome to Nava Platform Hub — an autonomous AI-native GPU cloud. We provide real-time hardware telemetry, live compute utilization, and automated fleet management across H100, A100, and B200 SXM nodes.", position: 'bottom' },
-  { target: '#nav-inference', title: '2. Inference Stack Telemetry (vLLM & SGLang)', script: "Nava prioritizes hyperscale inference efficiency. This stack visualizes real-time metrics for vLLM, SGLang, and TensorRT-LLM engines, tracking PagedAttention KV-Cache pressure and Time-To-First-Token (TTFT).", position: 'bottom' },
-  { target: '#nav-sre', title: '3. GPU SRE & Bare-Metal Self-Healing Ops', script: "Our SRE observability engine instruments NVIDIA DCGM metrics and monitors kernel Xid errors in real-time. When a critical failure like Xid 79 occurs, automated runbooks isolate the failed GPU node via the NVIDIA Operator.", position: 'bottom' },
-  { target: '#nav-network', title: '4. High-Throughput GPU Network Fabric', script: "Modern AI performance relies heavily on networking. This view maps Clos / Leaf-Spine topologies and tracks 800G RoCEv2 / InfiniBand GPUDirect RDMA throughput with PFC pause frame congestion control.", position: 'bottom' },
-  { target: '#nav-simulator', title: '5. Workload & Quantization Simulator', script: "Our killer feature! Before spending a single dollar, users can benchmark FP8/AWQ quantization performance, test vLLM vs TensorRT-LLM, and evaluate EAGLE speculative decoding speedups to optimize their cloud spend.", position: 'bottom' }
+  { target: '#view-sre', title: '1. Bare-Metal GPU Reliability & SRE Platform', script: "Welcome to Nava GPU SRE Sentinel. Built with a Python FastAPI backend and SQLite database, this platform monitors hyperscale bare-metal GPU clusters, tracking compute health and hardware errors.", position: 'bottom' },
+  { target: '#dcgm-stats-grid', title: '2. NVIDIA DCGM Hardware Observability', script: "Our Python engine ingests NVIDIA DCGM metrics in real time. We monitor SM Occupancy %, Power Draw in Watts, Temperature °C, and PCIe bus bandwidth across H100, A100, and B200 SXM nodes.", position: 'bottom' },
+  { target: '#xid-error-feed', title: '3. Kernel Xid 79 Errors & Self-Healing Runbooks', script: "When a hardware failure like Xid 79 occurs (GPU fallen off PCIe bus), our Python self-healing worker automatically cordons the node in Kubernetes, drains active workloads, issues a PCIe bus reset, and logs an immutable audit trail.", position: 'top' }
 ];
 
 let currentPitchStep = 0;
@@ -114,13 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('pitch-overlay');
   const highlight = document.getElementById('pitch-highlight');
   const tooltip = document.getElementById('pitch-tooltip');
-  
+
   if (pitchBtn) pitchBtn.addEventListener('click', startPitch);
-  
+
   document.getElementById('pitch-close')?.addEventListener('click', endPitch);
   document.getElementById('pitch-next')?.addEventListener('click', () => showPitchStep(currentPitchStep + 1));
   document.getElementById('pitch-prev')?.addEventListener('click', () => showPitchStep(currentPitchStep - 1));
-  
+
   function startPitch() {
     currentPitchStep = 0;
     if (overlay) overlay.classList.remove('hidden');
@@ -129,12 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
       showPitchStep(0);
     }, 50);
   }
-  
+
   function endPitch() {
     if (overlay) overlay.classList.remove('active');
     setTimeout(() => { if (overlay) overlay.classList.add('hidden'); }, 300);
   }
-  
+
   function showPitchStep(index) {
     if (index < 0 || index >= pitchSteps.length) {
       endPitch();
@@ -142,46 +116,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentPitchStep = index;
     const step = pitchSteps[index];
-    
+
     document.getElementById('pitch-step-num').textContent = index + 1;
     document.getElementById('pitch-title').textContent = step.title;
     document.getElementById('pitch-body').textContent = step.script;
-    
-    if (step.target === '#view-dashboard') {
-       document.querySelector('.nav-tab[data-view="dashboard"]')?.click();
-    } else if (step.target === '#nav-inference') {
-       document.querySelector('.nav-tab[data-view="inference"]')?.click();
-    } else if (step.target === '#nav-sre') {
-       document.querySelector('.nav-tab[data-view="sre"]')?.click();
-    } else if (step.target === '#nav-network') {
-       document.querySelector('.nav-tab[data-view="network"]')?.click();
-    } else if (step.target === '#nav-simulator') {
-       document.querySelector('.nav-tab[data-view="simulator"]')?.click();
-    }
-    
+
     setTimeout(() => {
       const targetEl = document.querySelector(step.target);
       if (!targetEl) return;
-      
+
       const rect = targetEl.getBoundingClientRect();
-      
+
       if (highlight) {
         highlight.style.top = (rect.top - 10) + 'px';
         highlight.style.left = (rect.left - 10) + 'px';
         highlight.style.width = (rect.width + 20) + 'px';
         highlight.style.height = (rect.height + 20) + 'px';
       }
-      
+
       if (tooltip) {
         if (step.position === 'bottom') {
           tooltip.style.top = (rect.bottom + 20) + 'px';
           tooltip.style.left = Math.max(20, rect.left + (rect.width/2) - 175) + 'px';
-        } else if (step.position === 'left') {
-          tooltip.style.top = rect.top + 'px';
-          tooltip.style.left = (rect.left - 370) + 'px';
-        } else if (step.position === 'right') {
-          tooltip.style.top = rect.top + 'px';
-          tooltip.style.left = (rect.right + 20) + 'px';
+        } else if (step.position === 'top') {
+          tooltip.style.top = Math.max(20, rect.top - 180) + 'px';
+          tooltip.style.left = Math.max(20, rect.left + (rect.width/2) - 175) + 'px';
         }
       }
     }, 120);
