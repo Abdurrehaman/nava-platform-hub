@@ -13,7 +13,7 @@ import json
 
 from backend.database import init_db, SessionLocal, GPUNode, DCGMMetric, XidLog, RemediationAudit
 from backend.dcgm_emulator import seed_initial_data, generate_telemetry_tick
-from backend.remediation_engine import execute_remediation_runbook
+from backend.remediation_engine import execute_remediation_runbook, daemon_worker
 from backend.diagnostics import analyze_cluster_flaws
 
 app = FastAPI(
@@ -22,7 +22,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for Frontend communication
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,19 +44,29 @@ def startup_event():
     init_db()
     seed_initial_data()
     generate_telemetry_tick()
+    daemon_worker.start() # Start autonomous self-healing background thread
+
+@app.on_event("shutdown")
+def shutdown_event():
+    daemon_worker.stop()
 
 @app.get("/")
 def read_root():
     return {
         "service": "Nava GPU SRE Sentinel API",
         "status": "ONLINE",
+        "daemon_status": "RUNNING" if daemon_worker.is_running else "STOPPED",
         "documentation": "/docs",
         "version": "1.0.0"
     }
 
 @app.get("/api/v1/health")
 def health_check():
-    return {"status": "HEALTHY", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "status": "HEALTHY",
+        "daemon_active": daemon_worker.is_running,
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 @app.get("/api/v1/nodes")
 def get_nodes():
@@ -137,10 +146,6 @@ def remediate_node(node_id: str, trigger_reason: str = "Xid 79 Hardware Error"):
 
 @app.post("/api/v1/diagnose")
 def run_cluster_diagnostics(input_data: DiagnosticInput):
-    """
-    Runs real-time hardware flaw analysis on user-submitted cluster inputs.
-    Detects thermal throttling risks, PCIe bottlenecks, VRAM OOM risks, and power under-provisioning.
-    """
     config = input_data.dict()
     report = analyze_cluster_flaws(config)
     return report

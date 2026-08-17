@@ -6,18 +6,26 @@
 import { generateDCGMMetrics } from './data-simulator.js';
 import { drawRadialGauge } from './chart-renderer.js';
 
+let telemetryInterval = null;
+
 export function initGPUSREOps() {
   const container = document.getElementById('sre-ops-container');
   if (!container) return;
 
   renderSREMetrics();
   bindSREActions();
+
+  // Continuous background loop: update numbers every 2 seconds
+  if (telemetryInterval) clearInterval(telemetryInterval);
+  telemetryInterval = setInterval(() => {
+    renderSREMetrics();
+  }, 2000);
 }
 
 export function renderSREMetrics() {
   const data = generateDCGMMetrics();
 
-  // DCGM Stats
+  // DCGM Stats Grid
   const dcgmGrid = document.getElementById('dcgm-stats-grid');
   if (dcgmGrid) {
     dcgmGrid.innerHTML = `
@@ -46,7 +54,7 @@ export function renderSREMetrics() {
 
   // Xid Error Feed
   const xidFeed = document.getElementById('xid-error-feed');
-  if (xidFeed) {
+  if (xidFeed && !xidFeed.dataset.userInteracted) {
     xidFeed.innerHTML = data.xidLogs.map(log => `
       <div class="xid-item ${log.severity.toLowerCase()}">
         <div class="xid-header">
@@ -82,6 +90,9 @@ function bindSREActions() {
       const node = e.target.getAttribute('data-node');
       const code = e.target.getAttribute('data-code');
       
+      const xidFeed = document.getElementById('xid-error-feed');
+      if (xidFeed) xidFeed.dataset.userInteracted = "true";
+
       e.target.textContent = '⏳ Executing Runbook...';
       e.target.disabled = true;
 
@@ -90,7 +101,6 @@ function bindSREActions() {
         e.target.style.background = 'rgba(0, 229, 200, 0.2)';
         e.target.style.color = '#00E5C8';
 
-        // Notify user via event
         const toast = document.getElementById('sre-toast-notification');
         if (toast) {
           toast.textContent = `[Self-Healing Runbook] Successfully cordoned ${node} (NVIDIA GPU Operator isolated ${code})`;
