@@ -90,6 +90,7 @@ body {
   border: 1px solid var(--border-color);
   padding: 20px;
   border-radius: 10px;
+  overflow: hidden;
 }
 
 .margin-top { margin-top: 20px; }
@@ -102,6 +103,25 @@ body {
 .dcgm-card { background: var(--bg-panel); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; }
 .dcgm-label { display: block; font-size: 0.7rem; color: var(--text-muted); }
 .dcgm-val { font-size: 0.95rem; font-weight: 700; margin-top: 4px; }
+
+.gauge-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 240px;
+  overflow: hidden;
+}
+
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.chart-header h3 { font-size: 0.95rem; font-weight: 700; }
+
+/* Canvas strictly bounded so it can NEVER expand or overflow */
+#dcgm-occupancy-chart {
+  width: 100% !important;
+  height: 160px !important;
+  max-height: 160px !important;
+  display: block;
+}
 
 .xid-error-feed { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .xid-item { background: var(--bg-panel); border-left: 4px solid var(--primary); padding: 14px; border-radius: 6px; }
