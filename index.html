@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
-  <script type="module" crossorigin src="./assets/index-BHuTGFlU.js"></script>
+  <script type="module" crossorigin src="./assets/index-qCEPwaSu.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-DcINNbCd.css">
 </head>
 <body>
@@ -69,8 +69,11 @@
                 <div id="dcgm-stats-grid" class="dcgm-stats-grid"></div>
               </div>
               <div class="panel-card gauge-panel">
-                <h3>Streaming Multiprocessor (SM) Occupancy %</h3>
-                <canvas id="dcgm-occupancy-gauge" width="200" height="200"></canvas>
+                <div class="chart-header">
+                  <h3>SM Occupancy (Live Stream)</h3>
+                  <span class="score-badge" id="dcgm-occupancy-val" style="font-size: 0.8rem; padding: 2px 8px;">0%</span>
+                </div>
+                <canvas id="dcgm-occupancy-chart" width="320" height="180"></canvas>
               </div>
             </div>
 
@@ -89,7 +92,6 @@
           </div>
 
           <div class="diagnostics-grid">
-            <!-- Configuration Inputs Panel -->
             <div class="panel-card">
               <h3>Cluster Configuration Parameters</h3>
               <form id="diag-form" class="diag-form">
@@ -143,7 +145,6 @@
               </form>
             </div>
 
-            <!-- Flaw Analysis Report Output Panel -->
             <div class="panel-card">
               <div class="diag-report-header">
                 <h3>Backend Flaw Analysis Report</h3>
