@@ -1,29 +1,58 @@
 // ─────────────────────────────────────────────────────────────
 //  modules/gpu-sre-ops.js — Nava Platform Hub
-//  GPU SRE Fleet Operations, NVIDIA DCGM & Xid Self-Healing
+//  GPU SRE Fleet Operations, NVIDIA DCGM & Real-Time SM Occupancy Line Chart
 // ─────────────────────────────────────────────────────────────
 
 import { generateDCGMMetrics } from './data-simulator.js';
-import { drawRadialGauge } from './chart-renderer.js';
+import { drawLineChart } from './chart-renderer.js';
 
 let telemetryInterval = null;
+let smOccupancyHistory = [];
 
 export function initGPUSREOps() {
   const container = document.getElementById('sre-ops-container');
   if (!container) return;
 
+  // Initialize seed history
+  if (smOccupancyHistory.length === 0) {
+    for (let i = 0; i < 20; i++) {
+      smOccupancyHistory.push({ x: i, y: Math.floor(75 + Math.random() * 20) });
+    }
+  }
+
   renderSREMetrics();
   bindSREActions();
 
-  // Continuous background loop: update numbers every 2 seconds
+  // Continuous live loop: update every 1.5 seconds
   if (telemetryInterval) clearInterval(telemetryInterval);
   telemetryInterval = setInterval(() => {
     renderSREMetrics();
-  }, 2000);
+  }, 1500);
 }
 
 export function renderSREMetrics() {
   const data = generateDCGMMetrics();
+
+  // Update SM Occupancy History array
+  const currentVal = data.dcgmStats.smOccupancy;
+  smOccupancyHistory.push({ x: smOccupancyHistory.length, y: currentVal });
+  if (smOccupancyHistory.length > 35) {
+    smOccupancyHistory.shift();
+  }
+
+  // Update DOM Badge Value
+  const smValBadge = document.getElementById('dcgm-occupancy-val');
+  if (smValBadge) {
+    smValBadge.textContent = `${currentVal}%`;
+  }
+
+  // Render Line Chart
+  const chartCanvas = document.getElementById('dcgm-occupancy-chart');
+  if (chartCanvas) {
+    drawLineChart(chartCanvas, [
+      { data: smOccupancyHistory, color: '#7C5CFC', fill: true }
+    ], { yMin: 0, yMax: 100, gridLines: true });
+  }
 
   // DCGM Stats Grid
   const dcgmGrid = document.getElementById('dcgm-stats-grid');
@@ -70,18 +99,6 @@ export function renderSREMetrics() {
       </div>
     `).join('');
   }
-
-  // DCGM Gauge
-  const dcgmGauge = document.getElementById('dcgm-occupancy-gauge');
-  if (dcgmGauge) {
-    drawRadialGauge(dcgmGauge, data.dcgmStats.smOccupancy, 100, {
-      color: '#7C5CFC',
-      label: 'SM OCCUPANCY',
-      unit: '%',
-      warningThreshold: 85,
-      dangerThreshold: 95
-    });
-  }
 }
 
 function bindSREActions() {
@@ -89,7 +106,7 @@ function bindSREActions() {
     if (e.target && e.target.classList.contains('btn-remediate-action')) {
       const node = e.target.getAttribute('data-node');
       const code = e.target.getAttribute('data-code');
-      
+
       const xidFeed = document.getElementById('xid-error-feed');
       if (xidFeed) xidFeed.dataset.userInteracted = "true";
 
